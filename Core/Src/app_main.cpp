@@ -1,8 +1,11 @@
 #include "app_main.hpp"
 
-void app_setup() {}
+#include "tim.hpp"
+
+void app_setup() { tim::setup(); }
 
 void app_loop() {
   while (true) {
+    tim::loop();
   }
 }
