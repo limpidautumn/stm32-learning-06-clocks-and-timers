@@ -2,7 +2,10 @@
 
 #include "tim.hpp"
 
-void app_setup() { tim::setup(); }
+void app_setup() {
+  err::setup();
+  tim::setup();
+}
 
 void app_loop() {
   while (true) {

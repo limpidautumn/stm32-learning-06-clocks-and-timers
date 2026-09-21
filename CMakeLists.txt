@@ -67,14 +67,23 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user defined symbols
+    ETL_LOG_ERRORS
 )
 
 # Remove wrong libob.a library dependency when using cpp files
 list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 
+include(FetchContent)
+
+# etl
+FetchContent_Declare(etl
+  GIT_REPOSITORY https://github.com/ETLCPP/etl.git
+  GIT_TAG 20.49.0
+)
+FetchContent_MakeAvailable(etl)
+
 # Add linked libraries
 target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
-
-    # Add user defined libraries
+    etl::etl
 )
