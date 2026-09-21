@@ -4,6 +4,7 @@
 #include "tim.h"
 
 #include <etl/delegate.h>
+#include <etl/queue_spsc_atomic.h>
 #include <etl/vector.h>
 
 namespace tim {
@@ -22,14 +23,30 @@ public:
 
   ~Timer() { unregister(); }
 
-  void setup() {
+  void onSetup() {
     if (HAL_TIM_Base_Start_IT(htim) != HAL_OK)
       err::fatalErrorHandler();
   }
 
+  void onLoop() {
+    Callback callback;
+    while (pending_.pop(callback))
+      callback.call_if();
+  }
+
   void onPeriodElapsed(const TIM_HandleTypeDef *const handle) {
     if (handle == htim && callback_)
-      callback_();
+      pending_.push(callback_);
+  }
+
+  static void dispatchSetup() {
+    for (Timer *timer : timers())
+      timer->onSetup();
+  }
+
+  static void dispatchLoop() {
+    for (Timer *timer : timers())
+      timer->onLoop();
   }
 
   static void dispatchPeriodElapsed(const TIM_HandleTypeDef *const handle) {
@@ -41,7 +58,9 @@ public:
 
 private:
   static constexpr std::size_t MaxTimers = 8;
+  static constexpr std::size_t MaxPending = 8;
   using TimerList = etl::vector<Timer *, MaxTimers>;
+  using PendingQueue = etl::queue_spsc_atomic<Callback, MaxPending>;
 
   // To avoid static initialization order issues
   static TimerList &timers() {
@@ -60,6 +79,7 @@ private:
 
   TIM_HandleTypeDef *const htim;
   const Callback callback_;
+  PendingQueue pending_;
 };
 
 extern Timer tim4;
