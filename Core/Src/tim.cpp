@@ -25,7 +25,7 @@ void loop() {
                                 "cnt=%" PRIu32 "\n", cnt);
   HAL_UART_Transmit(&huart2, msg, len, kXmitTimeoutMs);
 
-  static constexpr uint8_t trigMsg[] = "A gate trigger was detected.\n";
+  static constexpr uint8_t trigMsg[] = "A trigger event started the counter.\n";
   if (__HAL_TIM_GET_FLAG(&htim2, TIM_FLAG_TRIGGER)) {
     __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_TRIGGER);
     HAL_UART_Transmit(&huart2, trigMsg, sizeof(trigMsg) - 1, kXmitTimeoutMs);
