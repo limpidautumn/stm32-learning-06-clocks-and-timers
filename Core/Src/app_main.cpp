@@ -2,13 +2,13 @@
 
 #include "tim.hpp"
 
-void app_setup() {
-  err::setup();
-  tim::setup();
+void AppSetup() {
+  err::Setup();
+  tim::Setup();
 }
 
-void app_loop() {
+void AppLoop() {
   while (true) {
-    tim::loop();
+    tim::Loop();
   }
 }

@@ -91,14 +91,14 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
-  app_setup();
+  AppSetup();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    app_loop();
+    AppLoop();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

@@ -1,75 +1,68 @@
 #pragma once
-#include "error.hpp"
-
-#include "tim.h"
-
 #include <etl/delegate.h>
 #include <etl/queue_spsc_atomic.h>
 #include <etl/vector.h>
 
+#include "error.hpp"
+#include "tim.h"
+
 namespace tim {
 
-void setup();
-void loop();
+void Setup();
+void Loop();
 
 class Timer {
-public:
+ public:
   using Callback = etl::delegate<void()>;
 
-  explicit Timer(TIM_HandleTypeDef *const htim, const Callback &callback = {})
-      : htim(htim), callback_(callback) {
-    timers().push_back(this);
+  explicit Timer(TIM_HandleTypeDef* const htim, const Callback& callback = {})
+      : htim_(htim), callback_(callback) {
+    Timers().push_back(this);
   }
 
-  ~Timer() { unregister(); }
+  ~Timer() { Unregister(); }
 
-  void onSetup() {
-    if (HAL_TIM_Base_Start_IT(htim) != HAL_OK)
-      err::fatalErrorHandler();
+  void OnSetup() {
+    if (HAL_TIM_Base_Start_IT(htim_) != HAL_OK) err::FatalErrorHandler();
   }
 
-  void onLoop() {
+  void OnLoop() {
     Callback callback;
-    while (pending_.pop(callback))
-      callback.call_if();
+    while (pending_.pop(callback)) callback.call_if();
   }
 
-  void onPeriodElapsed(const TIM_HandleTypeDef *const handle) {
-    if (handle == htim && callback_)
-      pending_.push(callback_);
+  void OnPeriodElapsed(const TIM_HandleTypeDef* const handle) {
+    if (handle == htim_ && callback_) pending_.push(callback_);
   }
 
-  static void dispatchSetup() {
-    for (Timer *timer : timers())
-      timer->onSetup();
+  static void DispatchSetup() {
+    for (Timer* timer : Timers()) timer->OnSetup();
   }
 
-  static void dispatchLoop() {
-    for (Timer *timer : timers())
-      timer->onLoop();
+  static void DispatchLoop() {
+    for (Timer* timer : Timers()) timer->OnLoop();
   }
 
-  static void dispatchPeriodElapsed(const TIM_HandleTypeDef *const handle) {
-    for (Timer *timer : timers())
-      timer->onPeriodElapsed(handle);
+  static void DispatchPeriodElapsed(const TIM_HandleTypeDef* const handle) {
+    for (Timer* timer : Timers()) timer->OnPeriodElapsed(handle);
   }
 
-  uint32_t getCnt() const { return __HAL_TIM_GET_COUNTER(htim); }
+  uint32_t cnt() const { return __HAL_TIM_GET_COUNTER(htim_); }
 
-private:
-  static constexpr std::size_t MaxTimers = 8;
-  static constexpr std::size_t MaxPending = 8;
-  using TimerList = etl::vector<Timer *, MaxTimers>;
-  using PendingQueue = etl::queue_spsc_atomic<Callback, MaxPending>;
+ private:
+  static constexpr std::size_t kMaxTimers = 8;
+  static constexpr std::size_t kMaxPending = 8;
+  using TimerList = etl::vector<Timer*, kMaxTimers>;
+  using PendingQueue = etl::queue_spsc_atomic<Callback, kMaxPending>;
 
   // To avoid static initialization order issues
-  static TimerList &timers() {
+  static TimerList& Timers() {
     static TimerList list;
     return list;
   }
 
-  void unregister() {
-    auto &list = timers();
+  void Unregister() {
+    auto& list = Timers();
     for (auto it = list.begin(); it != list.end(); ++it)
       if (*it == this) {
         list.erase(it);
@@ -77,11 +70,11 @@ private:
       }
   }
 
-  TIM_HandleTypeDef *const htim;
+  TIM_HandleTypeDef* const htim_;
   const Callback callback_;
   PendingQueue pending_;
 };
 
 extern Timer tim4;
 
-} // namespace tim
+}  // namespace tim

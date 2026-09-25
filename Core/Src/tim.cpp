@@ -6,11 +6,11 @@ namespace tim {
 
 Timer tim4(&htim4);
 
-void setup() { Timer::dispatchSetup(); }
-void loop() { Timer::dispatchLoop(); }
+void Setup() { Timer::DispatchSetup(); }
+void Loop() { Timer::DispatchLoop(); }
 
-} // namespace tim
+}  // namespace tim
 
-extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-  tim::Timer::dispatchPeriodElapsed(htim);
+extern "C" void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim) {
+  tim::Timer::DispatchPeriodElapsed(htim);
 }

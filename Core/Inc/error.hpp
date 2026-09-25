@@ -1,20 +1,18 @@
 #pragma once
 
-#include "stm32f1xx_hal.h"
-
 #include <etl/error_handler.h>
+
+#include "stm32f1xx_hal.h"
 
 namespace err {
 
-inline void fatalErrorHandler() {
+inline void FatalErrorHandler() {
   HAL_Delay(100);
   HAL_NVIC_SystemReset();
 }
 
-inline void etlErrorHandler(const etl::exception &) { fatalErrorHandler(); }
+inline void EtlErrorHandler(const etl::exception&) { FatalErrorHandler(); }
 
-inline void setup() {
-  etl::error_handler::set_callback<&etlErrorHandler>();
-}
+inline void Setup() { etl::error_handler::set_callback<&EtlErrorHandler>(); }
 
-} // namespace err
+}  // namespace err
