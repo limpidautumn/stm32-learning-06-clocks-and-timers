@@ -2,17 +2,25 @@
 
 #include <etl/error_handler.h>
 
-#include "stm32f1xx_hal.h"
+#include "utils.hpp"
 
-namespace err {
+namespace app {
 
-inline void FatalErrorHandler() {
-  HAL_Delay(100);
-  HAL_NVIC_SystemReset();
-}
+class Error {
+ public:
+  static void Setup() {
+    EnableCycCnt();
+    etl::error_handler::set_callback<&OnError>();
+  }
 
-inline void EtlErrorHandler(const etl::exception&) { FatalErrorHandler(); }
+  static void Fatal() {
+    EnableCycCnt();
+    DelayUs(100000);
+    HAL_NVIC_SystemReset();
+  }
 
-inline void Setup() { etl::error_handler::set_callback<&EtlErrorHandler>(); }
+ private:
+  static void OnError(const etl::exception&) { Fatal(); }
+};
 
-}  // namespace err
+}  // namespace app

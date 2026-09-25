@@ -1,14 +1,16 @@
 #include "app_main.hpp"
 
+#include "error.hpp"
+#include "pending.hpp"
 #include "tim.hpp"
 
 void AppSetup() {
-  err::Setup();
-  tim::Setup();
+  app::Error::Setup();
+  app::Timer::Setup();
 }
 
 void AppLoop() {
   while (true) {
-    tim::Loop();
+    app::Pending::Run();
   }
 }
