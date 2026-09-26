@@ -22,7 +22,6 @@ class SerialTick {
   }
 };
 
-namespace {
 constexpr uint32_t kUsPerSecond = 1000000U;
 constexpr uint32_t CycAt(const uint32_t us, const uint32_t clock) {
   return static_cast<uint64_t>(us) * clock / kUsPerSecond;
@@ -30,7 +29,6 @@ constexpr uint32_t CycAt(const uint32_t us, const uint32_t clock) {
 constexpr uint32_t UsAt(const uint32_t cyc, const uint32_t clock) {
   return static_cast<uint64_t>(cyc) * kUsPerSecond / clock;
 }
-}  // namespace
 
 class CycCnt {
  public:

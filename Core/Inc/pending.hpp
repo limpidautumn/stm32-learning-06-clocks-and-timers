@@ -12,28 +12,26 @@
 
 namespace app {
 
-using Callback = etl::delegate<void(void*)>;
+using Callback = etl::delegate<void()>;
 
 class Pending {
  public:
-  static void Push(const Callback& callback, const uint32_t delay_us,
-                   void* const user = nullptr) {
+  static void Push(const Callback& callback, const uint32_t delay_us = 0) {
     const InterruptGuard guard;  // Multiple interrupts may be producers.
     if (Tasks().full()) Error::Fatal();
-    Tasks().push({callback, CycCnt::Get() + CycCnt::Cyc(delay_us), user});
+    Tasks().push({callback, CycCnt::Get() + CycCnt::Cyc(delay_us)});
   }
 
   static void Run() {
     Task task;
     // Callbacks run outside the guard so they may Push again.
-    while (PopDue(task)) task.callback.call_if(task.user);
+    while (PopDue(task)) task.callback.call_if();
   }
 
  private:
   struct Task {
     Callback callback;
     uint32_t deadline;
-    void* user;
     bool operator<(const Task& t) const { return deadline > t.deadline; }
   };
   static bool PopDue(Task& task) {
