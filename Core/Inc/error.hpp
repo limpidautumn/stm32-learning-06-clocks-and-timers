@@ -2,20 +2,19 @@
 
 #include <etl/error_handler.h>
 
-#include "utils.hpp"
+#include <cassert>
+
+#include "cyc_cnt.hpp"
 
 namespace app {
 
 class Error {
  public:
-  static void Setup() {
-    EnableCycCnt();
-    etl::error_handler::set_callback<&OnError>();
-  }
+  static void Setup() { etl::error_handler::set_callback<&OnError>(); }
 
   static void Fatal() {
-    EnableCycCnt();
-    DelayUs(100000);
+    assert(CycCnt::Enabled());
+    CycCnt::Delay(CycCnt::Cyc(100000));
     HAL_NVIC_SystemReset();
   }
 

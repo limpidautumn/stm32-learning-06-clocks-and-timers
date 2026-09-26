@@ -5,6 +5,7 @@
 #include "tim.hpp"
 
 void AppSetup() {
+  app::CycCnt::Enable();
   app::Error::Setup();
   app::Timer::Setup();
 }

@@ -72,11 +72,12 @@ class Timer {
 
   void Unregister() {
     auto& list = Timers();
-    for (auto it = list.begin(); it != list.end(); ++it)
+    for (auto it = list.begin(); it != list.end(); ++it) {
       if (*it == this) {
         list.erase(it);
         return;
       }
+    }
   }
 
   TIM_HandleTypeDef* const htim_;

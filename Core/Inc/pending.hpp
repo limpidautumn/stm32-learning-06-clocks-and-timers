@@ -1,10 +1,14 @@
 #pragma once
 
 #include <etl/delegate.h>
-#include <etl/queue_spsc_atomic.h>
+#include <etl/priority_queue.h>
 
+#include <cstddef>
+
+#include "cyc_cnt.hpp"
+#include "error.hpp"
+#include "interrupt_guard.hpp"
 #include "stm32f1xx.h"
-#include "utils.hpp"
 
 namespace app {
 
@@ -12,30 +16,41 @@ using Callback = etl::delegate<void(void*)>;
 
 class Pending {
  public:
-  static void Push(const Callback& callback, void* const user = nullptr) {
+  static void Push(const Callback& callback, const uint32_t delay_us,
+                   void* const user = nullptr) {
     const InterruptGuard guard;  // Multiple interrupts may be producers.
-    Task task{callback, user};
-    Queue().push(task);
+    if (Tasks().full()) Error::Fatal();
+    Tasks().push({callback, CycCnt::Get() + CycCnt::Cyc(delay_us), user});
   }
 
   static void Run() {
     Task task;
-    while (Queue().pop(task)) task.callback.call_if(task.user);
+    // Callbacks run outside the guard so they may Push again.
+    while (PopDue(task)) task.callback.call_if(task.user);
   }
 
  private:
   struct Task {
     Callback callback;
+    uint32_t deadline;
     void* user;
+    bool operator<(const Task& t) const { return deadline > t.deadline; }
   };
+  static bool PopDue(Task& task) {
+    const InterruptGuard guard;
+    if (Tasks().empty() || !CycCnt::HasReached(Tasks().top().deadline))
+      return false;
+    Tasks().pop_into(task);
+    return true;
+  }
 
-  static constexpr std::size_t kMaxPending = 256;
-  using PendingQueue = etl::queue_spsc_atomic<Task, kMaxPending>;
+  static constexpr std::size_t kMaxPending = 64;
+  using PendingTasks = etl::priority_queue<Task, kMaxPending>;
 
   // To avoid static initialization order issues
-  static PendingQueue& Queue() {
-    static PendingQueue queue;
-    return queue;
+  static PendingTasks& Tasks() {
+    static PendingTasks tasks;
+    return tasks;
   }
 };
 
