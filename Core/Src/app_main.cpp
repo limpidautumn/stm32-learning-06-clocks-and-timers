@@ -18,9 +18,9 @@
 
 namespace app {
 
-Timer tim2(&htim2);
-TimerIc tim2_ic1(&htim2, TIM_CHANNEL_1);
-TimerIc tim2_ic2(&htim2, TIM_CHANNEL_2);
+Timer tim1(&htim1);
+TimerIc tim1_ic3(&htim1, TIM_CHANNEL_3);
+TimerIc tim1_ic4(&htim1, TIM_CHANNEL_4);
 
 namespace {
 
@@ -31,9 +31,9 @@ constexpr uint32_t kDelayUs = 1000000u - kPulseUs - kWaitUs;  // 1s
 uint32_t ts_ic1, ts_ic2, pulse_width;
 
 void TestSetup() {
-  tim2_ic1.SetCallback([]() { ts_ic1 = tim2_ic1.Value(); });
-  tim2_ic2.SetCallback([]() { ts_ic2 = tim2_ic2.Value(); });
-  tim2.AddIc(tim2_ic1).AddIc(tim2_ic2);
+  tim1_ic3.SetCallback([]() { ts_ic1 = tim1_ic3.Value(); });
+  tim1_ic4.SetCallback([]() { ts_ic2 = tim1_ic4.Value(); });
+  tim1.AddIc(tim1_ic3).AddIc(tim1_ic4);
   Timer::Setup();
 }
 
