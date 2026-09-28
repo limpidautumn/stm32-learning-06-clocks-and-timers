@@ -17,6 +17,7 @@ class HcSr04 {
   static constexpr uint32_t kXmitPulseWidthUs = 10U + 40U;
   static constexpr uint32_t kTickHz = 1000000U;
   static constexpr uint32_t kDelayUs = 50000U;
+  static constexpr uint32_t kTimeoutUs = kDelayUs + 0U;
   static constexpr uint32_t kInf = ~uint32_t{0};
 
  public:
@@ -40,6 +41,8 @@ class HcSr04 {
   const uint16_t trig_pin_;
   TimerIc &ic_rise_, ic_fall_;
 
+  const Callback timeout_ = Callback::create<HcSr04, &HcSr04::OnTimeout>(*this);
+
   uint32_t ts_rise_ = 0, ts_fall_ = 0;
   uint32_t recv_pulse_us_ = kInf;
 
@@ -53,6 +56,11 @@ class HcSr04 {
     ts_fall_ = ic_fall_.Value();
     Schedule();
   }
+  void OnTimeout() {
+    recv_pulse_us_ = kInf;
+    state_ = StateEnum::kIdle;
+    Schedule();
+  }
 
   void AdvanceState() {
     switch (state_) {
@@ -64,8 +72,10 @@ class HcSr04 {
       case StateEnum::kTriggering:
         HAL_GPIO_WritePin(trig_port_, trig_pin_, GPIO_PIN_RESET);
         state_ = StateEnum::kWaitingEcho;
+        Pending::Push(timeout_, kTimeoutUs);
         break;
       case StateEnum::kWaitingEcho:
+        Pending::Remove(timeout_);
         recv_pulse_us_ =
             static_cast<uint64_t>(ts_fall_ - ts_rise_) * kUsPerSecond / kTickHz;
         state_ = StateEnum::kIdle;
