@@ -18,7 +18,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Global compile options
-add_compile_options(-Os)
+add_compile_options()
 
 # Define the build type
 if(NOT CMAKE_BUILD_TYPE)

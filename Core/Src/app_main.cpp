@@ -3,57 +3,64 @@
 #include <cinttypes>
 #include <cstdio>
 
+#include "cyc_cnt.hpp"
 #include "error.hpp"
+#include "gpio.h"
 #include "hc_sr04.hpp"
 #include "main.h"
 #include "pending.hpp"
+#include "stm32f1xx_hal_gpio.h"
 #include "stm32f1xx_hal_uart.h"
+#include "tim.h"
 #include "tim.hpp"
 #include "tim_ic.hpp"
 #include "usart.h"
 
 namespace app {
 
-Timer tim1(&htim1);
-TimerIc tim1_ic3(&htim1, TIM_CHANNEL_3);
-TimerIc tim1_ic4(&htim1, TIM_CHANNEL_4);
-
-HcSr04 hc_sr04(HC_SR04_Trig_GPIO_Port, HC_SR04_Trig_Pin, tim1_ic3, tim1_ic4);
+Timer tim2(&htim2);
+TimerIc tim2_ic1(&htim2, TIM_CHANNEL_1);
+TimerIc tim2_ic2(&htim2, TIM_CHANNEL_2);
 
 namespace {
-void ReportPulseUs() {
-  static constexpr uint32_t kReportPeriodUs = 50000U;
-  static uint8_t tx_buf[64];
-  const uint32_t t_us = hc_sr04.PulseUs();
 
-  // if (hc_sr04.IsValid()) {
-  //   const uint32_t x_mm = (t_us * 343u + 500u) / 1000u;
-  //   const int len = snprintf(reinterpret_cast<char*>(tx_buf), sizeof(tx_buf),
-  //                            "%" PRIu32 "\n", x_mm);
-  //   HAL_UART_Transmit_IT(&huart2, tx_buf, len);
-  // }
+constexpr uint32_t kPulseUs = 1000u;                          // 1ms
+constexpr uint32_t kWaitUs = 10000u - kPulseUs;               // 10ms
+constexpr uint32_t kDelayUs = 1000000u - kPulseUs - kWaitUs;  // 1s
 
-  const int len = snprintf(reinterpret_cast<char*>(tx_buf), sizeof(tx_buf),
-                           "%" PRIu32 "\n", t_us);
-  HAL_UART_Transmit_IT(&huart2, tx_buf, len);
+uint32_t ts_ic1, ts_ic2, pulse_width;
 
-  Pending::Push(Callback::create<&ReportPulseUs>(), kReportPeriodUs);
+void TestSetup() {
+  tim2_ic1.SetCallback([]() { ts_ic1 = tim2_ic1.Value(); });
+  tim2_ic2.SetCallback([]() { ts_ic2 = tim2_ic2.Value(); });
+  tim2.AddIc(tim2_ic1).AddIc(tim2_ic2);
+  Timer::Setup();
 }
+
+void TestLoop() {
+  CycCnt::Delay(CycCnt::Cyc(kDelayUs));
+
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_SET);
+  CycCnt::Delay(CycCnt::Cyc(kPulseUs));
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, GPIO_PIN_RESET);
+
+  CycCnt::Delay(kWaitUs);
+
+  pulse_width = ts_ic2 - ts_ic1;
+
+  return;  // Breakpoint here
+}
+
 }  // namespace
 
 void Setup() {
   CycCnt::Enable();
   Error::Setup();
 
-  tim1.AddIc(tim1_ic3).AddIc(tim1_ic4);
-  Timer::Setup();
-
-  hc_sr04.Setup();
-
-  ReportPulseUs();
+  TestSetup();
 }
 
-void Loop() { Pending::Run(); }
+void Loop() { TestLoop(); }
 
 }  // namespace app
 
