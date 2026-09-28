@@ -26,16 +26,12 @@ void ReportPulseUs() {
   static uint8_t tx_buf[64];
   const uint32_t t_us = hc_sr04.PulseUs();
 
-  // if (hc_sr04.IsValid()) {
-  //   const uint32_t x_mm = (t_us * 343u + 500u) / 1000u;
-  //   const int len = snprintf(reinterpret_cast<char*>(tx_buf), sizeof(tx_buf),
-  //                            "%" PRIu32 "\n", x_mm);
-  //   HAL_UART_Transmit_IT(&huart2, tx_buf, len);
-  // }
-
-  const int len = snprintf(reinterpret_cast<char*>(tx_buf), sizeof(tx_buf),
-                           "%" PRIu32 "\n", t_us);
-  HAL_UART_Transmit_IT(&huart2, tx_buf, len);
+  if (hc_sr04.IsValid()) {
+    const uint32_t x_mm = (t_us * 343u + 500u) / 1000u / 2u;
+    const int len = snprintf(reinterpret_cast<char*>(tx_buf), sizeof(tx_buf),
+                             "%" PRIu32 "\n", x_mm);
+    HAL_UART_Transmit_IT(&huart2, tx_buf, len);
+  }
 
   Pending::Push(Callback::create<&ReportPulseUs>(), kReportPeriodUs);
 }

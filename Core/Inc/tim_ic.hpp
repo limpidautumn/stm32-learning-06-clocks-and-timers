@@ -11,6 +11,9 @@ class TimerIc {
   TimerIc(TIM_HandleTypeDef* const htim, const uint32_t channel)
       : htim_(htim), channel_(channel) {}
 
+  TimerIc(const TimerIc&) = delete;
+  TimerIc& operator=(const TimerIc&) = delete;
+
   void SetCallback(const Callback& callback) { callback_ = callback; }
 
   void Start() {

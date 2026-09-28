@@ -39,7 +39,7 @@ class HcSr04 {
  private:
   GPIO_TypeDef* const trig_port_;
   const uint16_t trig_pin_;
-  TimerIc &ic_rise_, ic_fall_;
+  TimerIc &ic_rise_, &ic_fall_;
 
   const Callback timeout_ = Callback::create<HcSr04, &HcSr04::OnTimeout>(*this);
 
