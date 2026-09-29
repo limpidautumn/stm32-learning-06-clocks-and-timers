@@ -1,17 +1,33 @@
 #include "app_main.hpp"
 
 #include "error.hpp"
+#include "hc_sr04.hpp"
 #include "pending.hpp"
 #include "tim.hpp"
+#include "tim_ic.hpp"
 
-void AppSetup() {
-  app::CycCnt::Enable();
-  app::Error::Setup();
-  app::Timer::Setup();
+namespace app {
+
+Timer tim1(&htim1);
+TimerIc tim1_ic3(&htim1, TIM_CHANNEL_3);
+TimerIc tim1_ic4(&htim1, TIM_CHANNEL_4);
+
+HcSr04 hc_sr04(HC_SR04_Trig_GPIO_Port, HC_SR04_Trig_Pin, tim1_ic3, tim1_ic4);
+
+void Setup() {
+  CycCnt::Enable();
+  Error::Setup();
+
+  tim1.AddIc(tim1_ic3).AddIc(tim1_ic4);
+  Timer::Setup();
+
+  hc_sr04.Setup();
 }
 
-void AppLoop() {
-  while (true) {
-    app::Pending::Run();
-  }
-}
+void Loop() { Pending::Run(); }
+
+}  // namespace app
+
+void AppSetup() { app::Setup(); }
+
+void AppLoop() { app::Loop(); }

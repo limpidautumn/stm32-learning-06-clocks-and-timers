@@ -8,16 +8,20 @@ namespace app {
 
 class TimerIc {
  public:
-  TimerIc(TIM_HandleTypeDef* const htim, const uint32_t channel,
-          const Callback& callback = {}, void* const user = nullptr)
-      : htim_(htim), channel_(channel), callback_(callback), user_(user) {}
+  TimerIc(TIM_HandleTypeDef* const htim, const uint32_t channel)
+      : htim_(htim), channel_(channel) {}
+
+  TimerIc(const TimerIc&) = delete;
+  TimerIc& operator=(const TimerIc&) = delete;
+
+  void SetCallback(const Callback& callback) { callback_ = callback; }
 
   void Start() {
     if (HAL_TIM_IC_Start_IT(htim_, channel_) != HAL_OK) Error::Fatal();
   }
 
   void OnCapture(const TIM_HandleTypeDef* const handle) {
-    if (handle->Channel == ActiveChannel(channel_)) callback_.call_if(user_);
+    if (handle->Channel == ActiveChannel(channel_)) callback_.call_if();
   }
 
   uint32_t Value() const { return HAL_TIM_ReadCapturedValue(htim_, channel_); }
@@ -25,8 +29,7 @@ class TimerIc {
  private:
   TIM_HandleTypeDef* const htim_;
   const uint32_t channel_;
-  const Callback callback_;
-  void* const user_;
+  Callback callback_;
 
   static HAL_TIM_ActiveChannel ActiveChannel(const uint32_t channel) {
     switch (channel) {

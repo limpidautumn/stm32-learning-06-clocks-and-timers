@@ -21,6 +21,7 @@ class Timer {
   Timer& operator=(const Timer&) = delete;
 
   Timer& AddIc(TimerIc& ic) {
+    if (started_) Error::Fatal();
     ics_.push_back(&ic);
     return *this;
   }
@@ -37,21 +38,20 @@ class Timer {
     for (Timer* timer : Timers()) timer->OnCapture(handle);
   }
 
-  void SetPeriod(const Callback& callback, void* const user = nullptr) {
-    period_ = callback;
-    period_user_ = user;
-  }
+  void SetPeriod(const Callback& callback) { period_ = callback; }
 
   uint32_t Count() const { return __HAL_TIM_GET_COUNTER(htim_); }
 
  private:
+  bool started_ = 0;
   void OnSetup() {
     if (HAL_TIM_Base_Start_IT(htim_) != HAL_OK) Error::Fatal();
     for (TimerIc* ic : ics_) ic->Start();
+    started_ = 1;
   }
 
   void OnPeriodElapsed(const TIM_HandleTypeDef* const handle) {
-    if (handle == htim_) period_.call_if(period_user_);
+    if (handle == htim_) period_.call_if();
   }
 
   void OnCapture(const TIM_HandleTypeDef* const handle) {
@@ -82,7 +82,6 @@ class Timer {
 
   TIM_HandleTypeDef* const htim_;
   Callback period_;
-  void* period_user_ = nullptr;
   IcList ics_;
 };
 
