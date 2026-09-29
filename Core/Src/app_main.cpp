@@ -4,7 +4,7 @@
 #include "hc_sr04.hpp"
 #include "pending.hpp"
 #include "tim.hpp"
-#include "tim_ic.hpp"
+#include "tim_channel.hpp"
 
 namespace app {
 
@@ -18,7 +18,7 @@ void Setup() {
   CycCnt::Enable();
   Error::Setup();
 
-  tim1.AddIc(tim1_ic3).AddIc(tim1_ic4);
+  tim1.AddChannel(tim1_ic3).AddChannel(tim1_ic4);
   Timer::Setup();
 
   hc_sr04.Setup();

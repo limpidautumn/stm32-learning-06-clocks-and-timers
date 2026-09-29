@@ -5,7 +5,7 @@
 #include "error.hpp"
 #include "pending.hpp"
 #include "tim.h"
-#include "tim_ic.hpp"
+#include "tim_channel.hpp"
 
 namespace app {
 
@@ -20,9 +20,10 @@ class Timer {
   Timer(const Timer&) = delete;
   Timer& operator=(const Timer&) = delete;
 
-  Timer& AddIc(TimerIc& ic) {
+  Timer& AddChannel(TimerChannel& channel) {
     if (started_) Error::Fatal();
-    ics_.push_back(&ic);
+    if (channels_.full()) Error::Fatal();
+    channels_.push_back(&channel);
     return *this;
   }
 
@@ -43,11 +44,11 @@ class Timer {
   uint32_t Count() const { return __HAL_TIM_GET_COUNTER(htim_); }
 
  private:
-  bool started_ = 0;
+  bool started_ = false;
   void OnSetup() {
     if (HAL_TIM_Base_Start_IT(htim_) != HAL_OK) Error::Fatal();
-    for (TimerIc* ic : ics_) ic->Start();
-    started_ = 1;
+    for (TimerChannel* channel : channels_) channel->Start();
+    started_ = true;
   }
 
   void OnPeriodElapsed(const TIM_HandleTypeDef* const handle) {
@@ -56,12 +57,12 @@ class Timer {
 
   void OnCapture(const TIM_HandleTypeDef* const handle) {
     if (handle != htim_) return;
-    for (TimerIc* ic : ics_) ic->OnCapture(handle);
+    for (TimerChannel* channel : channels_) channel->OnCapture(handle);
   }
 
-  static constexpr std::size_t kMaxIcs = 4;
+  static constexpr std::size_t kMaxChannels = 4;
   static constexpr std::size_t kMaxTimers = 8;
-  using IcList = etl::vector<TimerIc*, kMaxIcs>;
+  using ChannelList = etl::vector<TimerChannel*, kMaxChannels>;
   using TimerList = etl::vector<Timer*, kMaxTimers>;
 
   // To avoid static initialization order issues
@@ -82,7 +83,7 @@ class Timer {
 
   TIM_HandleTypeDef* const htim_;
   Callback period_;
-  IcList ics_;
+  ChannelList channels_;
 };
 
 }  // namespace app

@@ -9,7 +9,7 @@
 #include "stm32f1xx_hal_gpio.h"
 #include "tim.h"
 #include "tim.hpp"
-#include "tim_ic.hpp"
+#include "tim_channel.hpp"
 
 namespace app {
 class HcSr04 {
@@ -39,7 +39,8 @@ class HcSr04 {
  private:
   GPIO_TypeDef* const trig_port_;
   const uint16_t trig_pin_;
-  TimerIc &ic_rise_, &ic_fall_;
+  TimerIc& ic_rise_;
+  TimerIc& ic_fall_;
 
   const Callback timeout_ = Callback::create<HcSr04, &HcSr04::OnTimeout>(*this);
 
