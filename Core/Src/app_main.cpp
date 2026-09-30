@@ -1,27 +1,46 @@
 #include "app_main.hpp"
 
+#include <cinttypes>
+#include <cstdio>
+
 #include "error.hpp"
 #include "hc_sr04.hpp"
 #include "pending.hpp"
 #include "tim.hpp"
 #include "tim_channel.hpp"
+#include "usart.h"
 
 namespace app {
 
-Timer tim1(&htim1);
-TimerIc tim1_ic3(&htim1, TIM_CHANNEL_3);
-TimerIc tim1_ic4(&htim1, TIM_CHANNEL_4);
+Timer tim1(&htim1);  // Encoder
 
-HcSr04 hc_sr04(HC_SR04_Trig_GPIO_Port, HC_SR04_Trig_Pin, tim1_ic3, tim1_ic4);
+Timer tim3(&htim3);  // LED
+TimerPwm tim3_ch1(&htim3, TIM_CHANNEL_1);
+TimerPwm tim3_ch2(&htim3, TIM_CHANNEL_2);
+TimerPwm tim3_ch3(&htim3, TIM_CHANNEL_3);
+
+namespace {
+
+void ReportEncoder() {
+  static constexpr uint32_t kDelayUs = 50000;  // 50ms
+  static uint8_t buf[32];
+  uint8_t len = snprintf(reinterpret_cast<char*>(buf), sizeof(buf),
+                         "%" PRIu32 "\n", tim1.Count());
+  HAL_UART_Transmit_IT(&huart2, buf, len);
+
+  Pending::Push([]() { ReportEncoder(); }, kDelayUs);
+}
+
+}  // namespace
 
 void Setup() {
   CycCnt::Enable();
   Error::Setup();
 
-  tim1.AddChannel(tim1_ic3).AddChannel(tim1_ic4);
+  tim3.AddChannel(tim3_ch1).AddChannel(tim3_ch2);
   Timer::Setup();
 
-  hc_sr04.Setup();
+  ReportEncoder();
 }
 
 void Loop() { Pending::Run(); }
