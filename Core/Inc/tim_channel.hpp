@@ -94,7 +94,7 @@ class TimerPwm final : public TimerChannel<TimerPwm> {
   void OnCapture(const TIM_HandleTypeDef* const handle) { UNUSED(handle); }
 
   // duty = numerator / denominator
-  void SetDuty(const uint32_t num, uint32_t den = 100) {
+  void SetDuty(const uint32_t num, const uint32_t den = 100) {
     if (den == 0) Error::Fatal();
     static constexpr uint32_t kTimerCcrMax = 0xFFFFu;  // 16-bit CCR
     const uint32_t period = __HAL_TIM_GET_AUTORELOAD(Handle());
