@@ -57,10 +57,16 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define ENC_A_Pin GPIO_PIN_8
+#define ENC_A_GPIO_Port GPIOA
+#define ENC_B_Pin GPIO_PIN_9
+#define ENC_B_GPIO_Port GPIOA
 #define HC_SR04_Echo_Pin GPIO_PIN_10
 #define HC_SR04_Echo_GPIO_Port GPIOA
 #define HC_SR04_Trig_Pin GPIO_PIN_11
 #define HC_SR04_Trig_GPIO_Port GPIOA
+#define SERVO_Pin GPIO_PIN_8
+#define SERVO_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

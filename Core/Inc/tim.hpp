@@ -7,6 +7,7 @@
 
 #include "error.hpp"
 #include "pending.hpp"
+#include "stm32f1xx_hal_tim.h"
 #include "tim.h"
 #include "tim_channel.hpp"
 
@@ -33,7 +34,8 @@ class TimerBase {
 
   void SetPeriod(const Callback& callback) { period_ = callback; }
 
-  uint32_t Count() const { return __HAL_TIM_GET_COUNTER(htim_); }
+  uint32_t Counter() const { return __HAL_TIM_GET_COUNTER(htim_); }
+  void SetCounter(uint32_t value) { __HAL_TIM_SET_COUNTER(htim_, value); }
 
  protected:
   explicit TimerBase(TIM_HandleTypeDef* const htim) : htim_(htim) {
