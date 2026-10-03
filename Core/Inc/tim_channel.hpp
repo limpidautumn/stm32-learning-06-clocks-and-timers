@@ -1,7 +1,5 @@
 #pragma once
 
-#include <algorithm>
-
 #include "error.hpp"
 #include "pending.hpp"
 #include "stm32f1xx_hal_tim.h"
@@ -95,10 +93,12 @@ class TimerPwm final : public TimerChannel<TimerPwm> {
 
   void OnCapture(const TIM_HandleTypeDef* const handle) { UNUSED(handle); }
 
-  void SetDuty(const uint8_t duty_percent) {
+  // duty = numerator / denominator
+  void SetDuty(const uint32_t num, uint32_t den = 100) {
+    if (den == 0) Error::Fatal();
     static constexpr uint32_t kTimerCcrMax = 0xFFFFu;  // 16-bit CCR
     const uint32_t period = __HAL_TIM_GET_AUTORELOAD(Handle());
-    uint32_t compare = (period + 1u) * duty_percent / 100u;
+    uint32_t compare = static_cast<uint64_t>(period + 1u) * num / den;
     if (compare > kTimerCcrMax) compare = kTimerCcrMax;
     __HAL_TIM_SET_COMPARE(Handle(), Channel(), compare);
   }
