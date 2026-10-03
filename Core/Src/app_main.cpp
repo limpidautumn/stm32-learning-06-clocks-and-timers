@@ -8,20 +8,11 @@
 
 namespace app {
 
-Timer tim1(&htim1);
-TimerIc tim1_ic3(&htim1, TIM_CHANNEL_3);
-TimerIc tim1_ic4(&htim1, TIM_CHANNEL_4);
-
-HcSr04 hc_sr04(HC_SR04_Trig_GPIO_Port, HC_SR04_Trig_Pin, tim1_ic3, tim1_ic4);
-
 void Setup() {
   CycCnt::Enable();
   Error::Setup();
 
-  tim1.AddChannel(tim1_ic3).AddChannel(tim1_ic4);
-  Timer::Setup();
-
-  hc_sr04.Setup();
+  TimerBase::Setup();
 }
 
 void Loop() { Pending::Run(); }

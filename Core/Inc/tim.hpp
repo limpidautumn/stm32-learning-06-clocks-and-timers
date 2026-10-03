@@ -2,6 +2,9 @@
 
 #include <etl/vector.h>
 
+#include <cstddef>
+#include <tuple>
+
 #include "error.hpp"
 #include "pending.hpp"
 #include "tim.h"
@@ -9,46 +12,52 @@
 
 namespace app {
 
-class Timer {
+// Type-erased base of every Timer so that setup and interrupt dispatch can
+// reach timers with different channel sets.
+class TimerBase {
  public:
-  explicit Timer(TIM_HandleTypeDef* const htim) : htim_(htim) {
-    Timers().push_back(this);
-  }
-
-  ~Timer() { Unregister(); }
-
-  Timer(const Timer&) = delete;
-  Timer& operator=(const Timer&) = delete;
-
-  Timer& AddChannel(TimerChannel& channel) {
-    if (started_) Error::Fatal();
-    if (channels_.full()) Error::Fatal();
-    channels_.push_back(&channel);
-    return *this;
-  }
+  TimerBase(const TimerBase&) = delete;
+  TimerBase& operator=(const TimerBase&) = delete;
 
   static void Setup() {
-    for (Timer* timer : Timers()) timer->OnSetup();
+    for (TimerBase* timer : Timers()) timer->OnSetup();
   }
 
   static void DispatchPeriodElapsed(const TIM_HandleTypeDef* const handle) {
-    for (Timer* timer : Timers()) timer->OnPeriodElapsed(handle);
+    for (TimerBase* timer : Timers()) timer->OnPeriodElapsed(handle);
   }
 
   static void DispatchCapture(const TIM_HandleTypeDef* const handle) {
-    for (Timer* timer : Timers()) timer->OnCapture(handle);
+    for (TimerBase* timer : Timers()) timer->OnCapture(handle);
   }
 
   void SetPeriod(const Callback& callback) { period_ = callback; }
 
   uint32_t Count() const { return __HAL_TIM_GET_COUNTER(htim_); }
 
+ protected:
+  explicit TimerBase(TIM_HandleTypeDef* const htim) : htim_(htim) {
+    Timers().push_back(this);
+  }
+
+  ~TimerBase() { Unregister(); }
+
+  virtual void StartChannels() = 0;
+  virtual void OnChannelCapture(const TIM_HandleTypeDef* const handle) = 0;
+
  private:
-  bool started_ = false;
+  static constexpr std::size_t kMaxTimers = 8;
+  using TimerList = etl::vector<TimerBase*, kMaxTimers>;
+
+  // To avoid static initialization order issues
+  static TimerList& Timers() {
+    static TimerList list;
+    return list;
+  }
+
   void OnSetup() {
     if (HAL_TIM_Base_Start_IT(htim_) != HAL_OK) Error::Fatal();
-    for (TimerChannel* channel : channels_) channel->Start();
-    started_ = true;
+    StartChannels();
   }
 
   void OnPeriodElapsed(const TIM_HandleTypeDef* const handle) {
@@ -57,18 +66,7 @@ class Timer {
 
   void OnCapture(const TIM_HandleTypeDef* const handle) {
     if (handle != htim_) return;
-    for (TimerChannel* channel : channels_) channel->OnCapture(handle);
-  }
-
-  static constexpr std::size_t kMaxChannels = 4;
-  static constexpr std::size_t kMaxTimers = 8;
-  using ChannelList = etl::vector<TimerChannel*, kMaxChannels>;
-  using TimerList = etl::vector<Timer*, kMaxTimers>;
-
-  // To avoid static initialization order issues
-  static TimerList& Timers() {
-    static TimerList list;
-    return list;
+    OnChannelCapture(handle);
   }
 
   void Unregister() {
@@ -83,7 +81,28 @@ class Timer {
 
   TIM_HandleTypeDef* const htim_;
   Callback period_;
-  ChannelList channels_;
+};
+
+// Timer that owns a compile-time fixed set of channels.
+template <typename... Channels>
+class Timer final : public TimerBase {
+ public:
+  Timer(TIM_HandleTypeDef* const htim, Channels&... channels)
+      : TimerBase(htim),
+        channels_(static_cast<TimerChannel<Channels>*>(&channels)...) {}
+
+ private:
+  void StartChannels() override {
+    std::apply([](auto*... channel) { (channel->Start(), ...); }, channels_);
+  }
+
+  void OnChannelCapture(const TIM_HandleTypeDef* const handle) override {
+    std::apply(
+        [handle](auto*... channel) { (channel->OnCapture(handle), ...); },
+        channels_);
+  }
+
+  std::tuple<TimerChannel<Channels>*...> channels_;
 };
 
 }  // namespace app
