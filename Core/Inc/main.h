@@ -57,10 +57,24 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define DRV8833_AIN1_Pin GPIO_PIN_0
+#define DRV8833_AIN1_GPIO_Port GPIOA
+#define DRV8833_AIN2_Pin GPIO_PIN_1
+#define DRV8833_AIN2_GPIO_Port GPIOA
+#define KEY_1_Pin GPIO_PIN_12
+#define KEY_1_GPIO_Port GPIOB
+#define KEY_2_Pin GPIO_PIN_13
+#define KEY_2_GPIO_Port GPIOB
+#define ENC_A_Pin GPIO_PIN_8
+#define ENC_A_GPIO_Port GPIOA
+#define ENC_B_Pin GPIO_PIN_9
+#define ENC_B_GPIO_Port GPIOA
 #define HC_SR04_Echo_Pin GPIO_PIN_10
 #define HC_SR04_Echo_GPIO_Port GPIOA
 #define HC_SR04_Trig_Pin GPIO_PIN_11
 #define HC_SR04_Trig_GPIO_Port GPIOA
+#define SERVO_Pin GPIO_PIN_8
+#define SERVO_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
